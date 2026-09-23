@@ -125,7 +125,8 @@ Consequences of having no server, and how each is handled:
   office verifies it against the paybill statement. M-Pesa codes are unique,
   so a code cannot be recorded twice. Daraja can be added later if the
   institution ever moves to a paid plan.
-- **Reports and receipts:** generated in the browser as printable pages.
+- **Documents:** fee statements, exam cards and transcripts are printed from
+  the browser.
 
 Free-tier limits that shape the design: 50,000 document reads and 20,000
 writes per day. Lists are paged, counts use aggregation queries (one read
@@ -189,7 +190,33 @@ Each phase leaves the app working and ends with tests passing.
 5. **Deploy.** A Firebase project created by the owner, deployment
    instructions, and a checklist for installing the app on phones.
 
-## 5. Owner actions needed
+## 5. Status (23 September 2026)
+
+Phases 1 to 4 are done on the `restructure/firebase-kenya` branch:
+
+- Every original screen is ported to Firestore with live updates, and the
+  seven missing forms exist. All mock data is gone: the dashboard counts,
+  charts, finance chart, performance gauge, navbar and profiles read real
+  records.
+- Every flaw from the review is fixed, and each one has a test in
+  `tests/rules` or `tests/integration` that would catch it coming back.
+- Academic structure, marks, mark sheets, class registers, transcripts,
+  fees, funding schemes, invoicing, payments, transfers, statements and exam
+  cards are in place.
+- Checked in a real browser against the emulators (desktop and phone width),
+  for all five roles, with no console or permission errors.
+
+Phase 5 (deployment) waits on the owner's Firebase project.
+
+Not done yet, and worth doing next:
+
+- Unit registration per semester (students currently take every unit on
+  their class timetable).
+- Bulk import of students from a KUCCPS placement list or a spreadsheet.
+- An offline tool, possibly in Swa, that reconciles an exported M-Pesa
+  paybill statement against payments recorded in the app.
+
+## 6. Owner actions needed
 
 - Create a free Firebase project (Spark plan) at console.firebase.google.com,
   enable Email/Password sign-in and Firestore, and add the web app config to
