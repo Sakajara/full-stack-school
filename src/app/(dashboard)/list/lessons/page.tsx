@@ -1,144 +1,63 @@
+"use client";
+
 import FormContainer from "@/components/FormContainer";
-import Pagination from "@/components/Pagination";
-import Table from "@/components/Table";
-import TableSearch from "@/components/TableSearch";
-import prisma from "@/lib/prisma";
-import { ITEM_PER_PAGE } from "@/lib/settings";
-import { Class, Lesson, Prisma, Subject, Teacher } from "@prisma/client";
-import Image from "next/image";
-import { auth } from "@clerk/nextjs/server";
+import ListPage from "@/components/ListPage";
+import { Row, RowActions } from "@/components/rows";
+import { withSuspense } from "@/components/ui/Page";
+import { useAuth } from "@/lib/auth-context";
+import type { Lesson } from "@/lib/types";
+import { where } from "firebase/firestore";
+import { useSearchParams } from "next/navigation";
 
-type LessonList = Lesson & { subject: Subject } & { class: Class } & {
-  teacher: Teacher;
-};
+const LessonListPage = () => {
+  const { role, user } = useAuth();
+  const params = useSearchParams();
+  const classId = params.get("classId");
+  const teacherId = params.get("teacherId") ?? (role === "teacher" && !classId ? user?.uid : null);
 
+  const filters = [
+    ...(classId ? [where("classId", "==", classId)] : []),
+    ...(teacherId ? [where("teacherId", "==", teacherId)] : []),
+  ];
 
-const LessonListPage = async ({
-  searchParams,
-}: {
-  searchParams: { [key: string]: string | undefined };
-}) => {
+  const columns = [
+    { header: "Unit", accessor: "name" },
+    { header: "Class", accessor: "class" },
+    { header: "When", accessor: "when", className: "hidden md:table-cell" },
+    { header: "Venue", accessor: "venue", className: "hidden lg:table-cell" },
+    { header: "Lecturer", accessor: "teacher", className: "hidden md:table-cell" },
+    { header: "Actions", accessor: "action" },
+  ];
 
-const { sessionClaims } = auth();
-const role = (sessionClaims?.metadata as { role?: string })?.role;
-
-
-const columns = [
-  {
-    header: "Subject Name",
-    accessor: "name",
-  },
-  {
-    header: "Class",
-    accessor: "class",
-  },
-  {
-    header: "Teacher",
-    accessor: "teacher",
-    className: "hidden md:table-cell",
-  },
-  ...(role === "admin"
-    ? [
-        {
-          header: "Actions",
-          accessor: "action",
-        },
-      ]
-    : []),
-];
-
-const renderRow = (item: LessonList) => (
-  <tr
-    key={item.id}
-    className="border-b border-gray-200 even:bg-slate-50 text-sm hover:bg-lamaPurpleLight"
-  >
-    <td className="flex items-center gap-4 p-4">{item.subject.name}</td>
-    <td>{item.class.name}</td>
-    <td className="hidden md:table-cell">
-      {item.teacher.name + " " + item.teacher.surname}
-    </td>
-    <td>
-      <div className="flex items-center gap-2">
-        {role === "admin" && (
-          <>
-            <FormContainer table="lesson" type="update" data={item} />
-            <FormContainer table="lesson" type="delete" id={item.id} />
-          </>
-        )}
-      </div>
-    </td>
-  </tr>
-);
-
-  const { page, ...queryParams } = searchParams;
-
-  const p = page ? parseInt(page) : 1;
-
-  // URL PARAMS CONDITION
-
-  const query: Prisma.LessonWhereInput = {};
-
-  if (queryParams) {
-    for (const [key, value] of Object.entries(queryParams)) {
-      if (value !== undefined) {
-        switch (key) {
-          case "classId":
-            query.classId = parseInt(value);
-            break;
-          case "teacherId":
-            query.teacherId = value;
-            break;
-          case "search":
-            query.OR = [
-              { subject: { name: { contains: value, mode: "insensitive" } } },
-              { teacher: { name: { contains: value, mode: "insensitive" } } },
-            ];
-            break;
-          default:
-            break;
-        }
-      }
-    }
-  }
-
-  const [data, count] = await prisma.$transaction([
-    prisma.lesson.findMany({
-      where: query,
-      include: {
-        subject: { select: { name: true } },
-        class: { select: { name: true } },
-        teacher: { select: { name: true, surname: true } },
-      },
-      take: ITEM_PER_PAGE,
-      skip: ITEM_PER_PAGE * (p - 1),
-    }),
-    prisma.lesson.count({ where: query }),
-  ]);
+  const renderRow = (item: Lesson) => (
+    <Row key={item.id} archived={item.active === false}>
+      <td className="p-4">
+        {item.subjectCode && <span className="font-medium">{item.subjectCode} </span>}
+        {item.subjectName}
+        <p className="text-xs text-gray-400">{item.name}</p>
+      </td>
+      <td>{item.className}</td>
+      <td className="hidden md:table-cell whitespace-nowrap">
+        {item.day[0] + item.day.slice(1, 3).toLowerCase()} {item.startTime}-{item.endTime}
+      </td>
+      <td className="hidden lg:table-cell">{item.venue || "-"}</td>
+      <td className="hidden md:table-cell">{item.teacherName}</td>
+      <RowActions table="lesson" item={item} canEdit={role === "admin"} />
+    </Row>
+  );
 
   return (
-    <div className="bg-white p-4 rounded-md flex-1 m-4 mt-0">
-      {/* TOP */}
-      <div className="flex items-center justify-between">
-        <h1 className="hidden md:block text-lg font-semibold">All Lessons</h1>
-        <div className="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
-          <TableSearch />
-          <div className="flex items-center gap-4 self-end">
-            <button className="w-8 h-8 flex items-center justify-center rounded-full bg-lamaYellow">
-              <Image src="/filter.png" alt="" width={14} height={14} />
-            </button>
-            <button className="w-8 h-8 flex items-center justify-center rounded-full bg-lamaYellow">
-              <Image src="/sort.png" alt="" width={14} height={14} />
-            </button>
-            {role === "admin" && <FormContainer table="lesson" type="create" />}
-          </div>
-        </div>
-      </div>
-      {/* LIST */}
-      <Table columns={columns} renderRow={renderRow} data={data} />
-      {/* PAGINATION */}
-      <Pagination page={p} count={count} />
-    </div>
+    <ListPage<Lesson>
+      title={role === "teacher" && !classId ? "My Timetable" : "Timetable"}
+      collection="lessons"
+      columns={columns}
+      renderRow={renderRow}
+      filters={filters}
+      filterKey={`c:${classId}|t:${teacherId}`}
+      orderField="slot"
+      actions={role === "admin" && <FormContainer table="lesson" type="create" />}
+    />
   );
 };
 
-export default LessonListPage;
+export default withSuspense(LessonListPage);

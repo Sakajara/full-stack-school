@@ -1,44 +1,50 @@
 {
-  "name": "lama-dev-next-dashboard",
+  "name": "chuo",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:emulators": "firebase emulators:start --only auth,firestore --project demo-chuo",
     "build": "next build",
-    "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run tests/unit",
+    "test:rules": "firebase emulators:exec --only firestore --project demo-chuo \"vitest run tests/rules\"",
+    "deploy": "next build && firebase deploy --only hosting,firestore --project prod",
+    "test:flow": "firebase emulators:exec --only auth,firestore --project demo-chuo \"vitest run tests/integration\"",
+    "seed:structure": "tsx --env-file=.env.local scripts/seed-structure.ts",
+    "setup:prod": "tsx --env-file=.env.local scripts/bootstrap.ts"
   },
   "dependencies": {
-    "@clerk/elements": "^0.14.6",
-    "@clerk/nextjs": "^5.4.1",
-    "@hookform/resolvers": "^3.9.0",
-    "@prisma/client": "^5.19.1",
+    "@hookform/resolvers": "^3.10.0",
     "@types/react-big-calendar": "^1.8.9",
+    "firebase": "^12.19.0",
     "moment": "^2.30.1",
-    "next": "14.2.5",
-    "next-cloudinary": "^6.13.0",
-    "prisma": "^5.19.1",
-    "react": "^18",
-    "react-big-calendar": "^1.13.2",
-    "react-calendar": "^5.0.0",
-    "react-dom": "^18",
-    "react-hook-form": "^7.52.2",
-    "react-toastify": "^10.0.5",
-    "recharts": "^2.12.7",
+    "next": "^15.5.26",
+    "react": "^19.3.0",
+    "react-big-calendar": "^1.20.0",
+    "react-calendar": "^6.0.1",
+    "react-dom": "^19.3.0",
+    "react-hook-form": "^7.88.0",
+    "react-toastify": "^11.1.0",
+    "recharts": "^2.15.4",
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "@types/node": "^20",
-    "@types/react": "^18",
-    "@types/react-dom": "^18",
+    "@firebase/rules-unit-testing": "^5.0.2",
+    "@types/node": "^24.13.6",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
     "eslint": "^8",
-    "eslint-config-next": "14.2.5",
-    "postcss": "^8",
+    "eslint-config-next": "^15.5.26",
+    "firebase-tools": "^15.30.2",
+    "postcss": "^8.5.28",
     "tailwindcss": "^3.4.1",
-    "ts-node": "^10.9.2",
-    "typescript": "^5"
+    "tsx": "^4.23.15",
+    "typescript": "^5",
+    "vitest": "^5.0.1"
   },
-  "prisma": {
-    "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"
+  "overrides": {
+    "postcss": "$postcss"
   }
 }

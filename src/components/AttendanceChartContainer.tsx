@@ -1,69 +1,51 @@
-import Image from "next/image";
+"use client";
+
+import { col } from "@/lib/live";
+import { isoDate, mondayOf } from "@/lib/utils";
+import { getCountFromServer, query, where } from "firebase/firestore";
+import { useEffect, useState } from "react";
 import AttendanceChart from "./AttendanceChart";
-import prisma from "@/lib/prisma";
 
-const AttendanceChartContainer = async () => {
-  const today = new Date();
-  const dayOfWeek = today.getDay();
-  const daysSinceMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-  const lastMonday = new Date(today);
+// Counts, not documents: each bar is an aggregation query, so a week of
+// attendance for the whole institution costs a handful of reads.
+const AttendanceChartContainer = () => {
+  const [data, setData] = useState(DAYS.map((name) => ({ name, present: 0, absent: 0 })));
 
-  lastMonday.setDate(today.getDate() - daysSinceMonday);
-
-  const resData = await prisma.attendance.findMany({
-    where: {
-      date: {
-        gte: lastMonday,
-      },
-    },
-    select: {
-      date: true,
-      present: true,
-    },
-  });
-
-  // console.log(data)
-
-  const daysOfWeek = ["Mon", "Tue", "Wed", "Thu", "Fri"];
-
-  const attendanceMap: { [key: string]: { present: number; absent: number } } =
-    {
-      Mon: { present: 0, absent: 0 },
-      Tue: { present: 0, absent: 0 },
-      Wed: { present: 0, absent: 0 },
-      Thu: { present: 0, absent: 0 },
-      Fri: { present: 0, absent: 0 },
+  useEffect(() => {
+    const monday = mondayOf();
+    let cancelled = false;
+    Promise.all(
+      DAYS.map(async (name, i) => {
+        const d = new Date(monday);
+        d.setDate(monday.getDate() + i);
+        const date = isoDate(d);
+        const [p, a] = await Promise.all(
+          [true, false].map((present) =>
+            getCountFromServer(
+              query(col("attendance"), where("date", "==", date), where("present", "==", present))
+            ).then((r) => r.data().count)
+          )
+        );
+        return { name, present: p, absent: a };
+      })
+    )
+      .then((rows) => !cancelled && setData(rows))
+      .catch((e) => console.warn("Attendance chart:", e));
+    return () => {
+      cancelled = true;
     };
+  }, []);
 
-  resData.forEach((item) => {
-    const itemDate = new Date(item.date);
-    const dayOfWeek = itemDate.getDay();
-    
-    if (dayOfWeek >= 1 && dayOfWeek <= 5) {
-      const dayName = daysOfWeek[dayOfWeek - 1];
-
-      if (item.present) {
-        attendanceMap[dayName].present += 1;
-      } else {
-        attendanceMap[dayName].absent += 1;
-      }
-    }
-  });
-
-  const data = daysOfWeek.map((day) => ({
-    name: day,
-    present: attendanceMap[day].present,
-    absent: attendanceMap[day].absent,
-  }));
+  const shown = data[5].present + data[5].absent > 0 ? data : data.slice(0, 5);
 
   return (
-    <div className="bg-white rounded-lg p-4 h-full">
+    <div className="bg-surface rounded-lg p-4 h-full">
       <div className="flex justify-between items-center">
-        <h1 className="text-lg font-semibold">Attendance</h1>
-        <Image src="/moreDark.png" alt="" width={20} height={20} />
+        <h1 className="text-lg font-semibold">Attendance this week</h1>
       </div>
-      <AttendanceChart data={data}/>
+      <AttendanceChart data={shown} />
     </div>
   );
 };

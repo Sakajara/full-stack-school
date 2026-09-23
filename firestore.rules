@@ -1,0 +1,267 @@
+rules_version = '2';
+
+// Every read and write in the app is checked here, on Google's servers.
+// The browser's route guard only decides what to show; these rules decide
+// what anyone can actually do.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------- helpers ----------
+
+    function signedIn() { return request.auth != null; }
+    function uid() { return request.auth.uid; }
+    function path(c, id) { return /databases/$(database)/documents/$(c)/$(id); }
+
+    function me() { return get(path('users', uid())).data; }
+    function isActive() {
+      return signedIn() && exists(path('users', uid())) && me().active == true;
+    }
+    function hasRole(roles) { return isActive() && me().role in roles; }
+    function isAdmin() { return hasRole(['admin']); }
+    function isOffice() { return hasRole(['admin', 'finance']); }
+    function isStaff() { return hasRole(['admin', 'finance', 'teacher']); }
+    function isTeacher() { return hasRole(['teacher']); }
+
+    // True only inside the one-time setup batch that creates the first admin.
+    function isBootstrapping() {
+      return signedIn()
+        && !exists(path('meta', 'setup'))
+        && getAfter(path('meta', 'setup')).data.adminUid == uid();
+    }
+
+    function incoming() { return request.resource.data; }
+    function changed() { return incoming().diff(resource.data).affectedKeys(); }
+
+    // The requester is the student, or the student's guardian.
+    function ownsStudentRecord(d) {
+      return d.studentId == uid() || (d.get('parentId', null) != null && d.parentId == uid());
+    }
+
+    function teachesLesson(lessonId) {
+      return get(path('lessons', lessonId)).data.teacherId == uid();
+    }
+
+    function ownsAssessment(d) {
+      return (d.get('examId', null) is string && get(path('exams', d.examId)).data.teacherId == uid())
+        || (d.get('assignmentId', null) is string && get(path('assignments', d.assignmentId)).data.teacherId == uid());
+    }
+
+    // ---------- setup and accounts ----------
+
+    match /meta/setup {
+      allow read: if true;
+      allow create: if signedIn()
+        && !exists(path('meta', 'setup'))
+        && incoming().adminUid == uid()
+        && getAfter(path('users', uid())).data.role == 'admin';
+    }
+
+    match /settings/{doc} {
+      // The sign-in page shows the institution's name.
+      allow read: if true;
+      allow write: if isAdmin() || isBootstrapping();
+    }
+
+    match /users/{userId} {
+      allow read: if (signedIn() && userId == uid()) || isAdmin();
+      allow create: if isAdmin()
+        || (isBootstrapping() && userId == uid() && incoming().role == 'admin' && incoming().active == true);
+      allow update: if isAdmin();
+      allow delete: if false;
+    }
+
+    // ---------- people ----------
+
+    match /admins/{id} {
+      allow read: if isStaff();
+      allow create: if isAdmin() || (isBootstrapping() && id == uid());
+      allow update: if isAdmin();
+      allow delete: if false;
+    }
+
+    match /teachers/{id} {
+      allow read: if isActive();
+      allow create, update: if isAdmin();
+      allow delete: if false;
+    }
+
+    match /students/{id} {
+      allow read: if isStaff()
+        || (signedIn() && id == uid())
+        || (isActive() && resource.data.parentId == uid());
+      allow create, update: if isAdmin();
+      allow delete: if false;
+    }
+
+    match /parents/{id} {
+      allow read: if isStaff() || (signedIn() && id == uid());
+      allow create, update: if isAdmin();
+      allow delete: if false;
+    }
+
+    // Birthdays, blood types, national IDs and home addresses. Lecturers do
+    // not need these, so only the office, the person and their guardian can
+    // read them.
+    match /private/{id} {
+      allow read: if isOffice()
+        || (signedIn() && id == uid())
+        || (isActive() && resource.data.get('parentId', null) == uid());
+      allow create, update: if isAdmin() || (isBootstrapping() && id == uid());
+      allow delete: if false;
+    }
+
+    // ---------- academic structure and calendar ----------
+
+    match /{c}/{id} {
+      allow read: if isActive() && c in [
+        'grades', 'classes', 'subjects', 'lessons', 'faculties', 'departments',
+        'programmes', 'events', 'announcements'
+      ];
+      allow create, update: if (isAdmin() || isBootstrapping()) && c in [
+        'grades', 'classes', 'subjects', 'lessons', 'faculties', 'departments',
+        'programmes', 'events', 'announcements'
+      ];
+    }
+
+    // ---------- assessment ----------
+
+    match /exams/{id} {
+      allow read: if isActive();
+      allow create: if isAdmin()
+        || (isTeacher() && incoming().teacherId == uid() && teachesLesson(incoming().lessonId));
+      allow update: if isAdmin()
+        || (isTeacher() && resource.data.teacherId == uid()
+            && incoming().teacherId == uid() && teachesLesson(incoming().lessonId));
+      allow delete: if false;
+    }
+
+    match /assignments/{id} {
+      allow read: if isActive();
+      allow create: if isAdmin()
+        || (isTeacher() && incoming().teacherId == uid() && teachesLesson(incoming().lessonId));
+      allow update: if isAdmin()
+        || (isTeacher() && resource.data.teacherId == uid()
+            && incoming().teacherId == uid() && teachesLesson(incoming().lessonId));
+      allow delete: if false;
+    }
+
+    function validScore(d) {
+      return d.score is number && d.maxScore is number
+        && d.score >= 0 && d.maxScore > 0 && d.score <= d.maxScore;
+    }
+
+    match /results/{id} {
+      allow read: if isOffice()
+        || (isTeacher() && resource.data.teacherId == uid())
+        || (isActive() && ownsStudentRecord(resource.data));
+      allow create: if validScore(incoming()) && (isAdmin()
+        || (isTeacher() && incoming().teacherId == uid() && ownsAssessment(incoming())));
+      allow update: if validScore(incoming()) && (isAdmin()
+        || (isTeacher() && resource.data.teacherId == uid()
+            && incoming().teacherId == uid() && ownsAssessment(incoming())));
+      allow delete: if isAdmin()
+        || (isTeacher() && resource.data.teacherId == uid());
+    }
+
+    match /attendance/{id} {
+      allow read: if isOffice()
+        || (isTeacher() && resource.data.teacherId == uid())
+        || (isActive() && ownsStudentRecord(resource.data));
+      allow create, update: if incoming().present is bool && (isAdmin()
+        || (isTeacher() && incoming().teacherId == uid() && teachesLesson(incoming().lessonId)));
+      allow delete: if false;
+    }
+
+    // ---------- messages ----------
+
+    match /messages/{id} {
+      allow read: if isActive()
+        && (resource.data.fromId == uid() || resource.data.toId == uid());
+      allow create: if isActive()
+        && incoming().fromId == uid()
+        && incoming().read == false
+        && incoming().body is string
+        && incoming().body.size() > 0
+        && incoming().body.size() <= 4000
+        && exists(path('users', incoming().toId));
+      // The recipient may only mark it read.
+      allow update: if isActive()
+        && resource.data.toId == uid()
+        && changed().hasOnly(['read']);
+      allow delete: if false;
+    }
+
+    // ---------- fees and funding ----------
+
+    match /payers/{id} {
+      allow read: if isActive();
+      allow write: if isOffice() || isBootstrapping();
+    }
+
+    match /fundingSchemes/{id} {
+      allow read: if isActive();
+      allow write: if isOffice() || isBootstrapping();
+    }
+
+    match /feeStructures/{id} {
+      // Students and guardians can see what a programme costs.
+      allow read: if isActive();
+      allow create, update: if isOffice();
+      allow delete: if false;
+    }
+
+    match /invoices/{id} {
+      allow read: if isOffice() || (isActive() && ownsStudentRecord(resource.data));
+      allow create, update: if isOffice();
+      allow delete: if false;
+    }
+
+    match /accounts/{studentId} {
+      allow read: if isOffice()
+        || (signedIn() && studentId == uid())
+        || (isActive() && resource.data.get('parentId', null) == uid());
+      allow create, update: if isOffice();
+      allow delete: if false;
+    }
+
+    // A payment the student or guardian reports. It stays pending until the
+    // finance office matches it against the paybill or bank statement. The
+    // document id is derived from the reference, so a code that is already
+    // recorded cannot be submitted again (that would be an update, which
+    // only the office may do).
+    function validSubmission(d) {
+      let student = get(path('students', d.studentId)).data;
+      return d.status == 'pending'
+        && d.submittedBy == uid()
+        && d.payer == 'household'
+        && d.amount is int && d.amount > 0 && d.amount <= 10000000
+        && d.reference is string && d.reference.size() >= 6 && d.reference.size() <= 40
+        && d.get('verifiedBy', null) == null
+        && d.get('remittanceId', null) == null
+        && d.get('parentId', null) == student.get('parentId', null)
+        && (d.studentId == uid() || student.get('parentId', null) == uid());
+    }
+
+    match /payments/{id} {
+      allow read: if isOffice()
+        || (isActive() && (ownsStudentRecord(resource.data) || resource.data.submittedBy == uid()));
+      allow create: if isOffice() || (hasRole(['student', 'parent']) && validSubmission(incoming()));
+      allow update: if isOffice();
+      allow delete: if false;
+    }
+
+    match /remittances/{id} {
+      allow read, create, update: if isOffice();
+      allow delete: if false;
+    }
+
+    match /financeMonths/{id} {
+      allow read, write: if isOffice();
+    }
+
+    match /counters/{id} {
+      allow read, write: if isOffice();
+    }
+  }
+}
