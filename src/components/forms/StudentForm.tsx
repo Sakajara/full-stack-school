@@ -3,258 +3,172 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import InputField from "../InputField";
-import Image from "next/image";
-import { Dispatch, SetStateAction, useEffect, useState } from "react";
-import {
-  studentSchema,
-  StudentSchema,
-  teacherSchema,
-  TeacherSchema,
-} from "@/lib/formValidationSchemas";
-import { useFormState } from "react-dom";
-import {
-  createStudent,
-  createTeacher,
-  updateStudent,
-  updateTeacher,
-} from "@/lib/actions";
-import { useRouter } from "next/navigation";
-import { toast } from "react-toastify";
-import { CldUploadWidget } from "next-cloudinary";
+import { useState } from "react";
+import { studentSchema, StudentSchema } from "@/lib/formValidationSchemas";
+import { createStudent, updateStudent } from "@/lib/actions";
+import { useLiveDoc } from "@/lib/live";
+import { useOptions } from "@/lib/options";
+import type { PrivateProfile, SchoolClass } from "@/lib/types";
+import { dateInput, FormProps, FormShell, PhotoField, Section, SelectField, useSubmit } from "./kit";
 
-const StudentForm = ({
+const StudentForm = ({ type, data, setOpen }: FormProps) => {
+  const priv = useLiveDoc<PrivateProfile>(data?.id ? `private/${data.id}` : null);
+  const grades = useOptions<{ id: string; level: number }>("grades", {
+    order: "level",
+    archivable: false,
+    label: (g) => `Year ${g.level}`,
+  });
+  const classes = useOptions<SchoolClass & { id: string }>("classes", {
+    label: (c) => `${c.name} (${c.studentCount ?? 0}/${c.capacity})`,
+  });
+  const parents = useOptions("parents", { order: "surname" });
+  const programmes = useOptions("programmes");
+
+  if (priv.loading || grades.loading || classes.loading || parents.loading || programmes.loading) {
+    return <p className="text-sm text-gray-400">Loading...</p>;
+  }
+  return (
+    <Inner
+      type={type}
+      data={data}
+      setOpen={setOpen}
+      priv={priv.data}
+      grades={grades.options}
+      classes={classes.options}
+      parents={parents.options}
+      programmes={programmes.options}
+    />
+  );
+};
+
+type Opt = { value: string; label: string }[];
+
+const Inner = ({
   type,
   data,
   setOpen,
-  relatedData,
-}: {
-  type: "create" | "update";
-  data?: any;
-  setOpen: Dispatch<SetStateAction<boolean>>;
-  relatedData?: any;
-}) => {
+  priv,
+  grades,
+  classes,
+  parents,
+  programmes,
+}: FormProps & { priv: PrivateProfile | null; grades: Opt; classes: Opt; parents: Opt; programmes: Opt }) => {
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm<StudentSchema>({
     resolver: zodResolver(studentSchema),
+    defaultValues: {
+      sex: data?.sex ?? priv?.sex ?? undefined,
+      gradeId: data?.gradeId ?? "",
+      classId: data?.classId ?? "",
+      parentId: data?.parentId ?? "",
+      programmeId: data?.programmeId ?? "",
+      sponsorship: data?.sponsorship ?? "GSS",
+      fundingBand: data?.fundingBand ?? "",
+      status: data?.status ?? "active",
+    },
   });
 
-  const [img, setImg] = useState<any>();
+  const [img, setImg] = useState<string | null>(data?.img ?? null);
 
-  const [state, formAction] = useFormState(
-    type === "create" ? createStudent : updateStudent,
-    {
-      success: false,
-      error: false,
-    }
+  const { busy, error, run } = useSubmit(
+    (d: StudentSchema) => (type === "create" ? createStudent : updateStudent)({ ...d, img }),
+    { success: `Student has been ${type === "create" ? "created" : "updated"}!`, setOpen }
   );
 
-  const onSubmit = handleSubmit((data) => {
-    console.log("hello");
-    console.log(data);
-    formAction({ ...data, img: img?.secure_url });
-  });
-
-  const router = useRouter();
-
-  useEffect(() => {
-    if (state.success) {
-      toast(`Student has been ${type === "create" ? "created" : "updated"}!`);
-      setOpen(false);
-      router.refresh();
-    }
-  }, [state, router, type, setOpen]);
-
-  const { grades, classes } = relatedData;
-
   return (
-    <form className="flex flex-col gap-8" onSubmit={onSubmit}>
-      <h1 className="text-xl font-semibold">
-        {type === "create" ? "Create a new student" : "Update the student"}
-      </h1>
-      <span className="text-xs text-gray-400 font-medium">
-        Authentication Information
-      </span>
-      <div className="flex justify-between flex-wrap gap-4">
+    <FormShell
+      title={type === "create" ? "Admit a new student" : "Update the student"}
+      onSubmit={handleSubmit(run)}
+      busy={busy}
+      error={error}
+      submitLabel={type === "create" ? "Create" : "Update"}
+    >
+      <Section title="Authentication Information">
         <InputField
-          label="Username"
+          label="Admission number"
           name="username"
-          defaultValue={data?.username}
+          defaultValue={data?.admissionNo ?? data?.username}
           register={register}
           error={errors?.username}
+          hint={type === "update" ? "Admission numbers cannot be changed." : "e.g. SCT221-0001/2025. Used to sign in and as the M-Pesa account number."}
+          inputProps={{ readOnly: type === "update" }}
         />
-        <InputField
-          label="Email"
-          name="email"
-          defaultValue={data?.email}
-          register={register}
-          error={errors?.email}
-        />
-        <InputField
-          label="Password"
-          name="password"
-          type="password"
-          defaultValue={data?.password}
-          register={register}
-          error={errors?.password}
-        />
-      </div>
-      <span className="text-xs text-gray-400 font-medium">
-        Personal Information
-      </span>
-      <CldUploadWidget
-        uploadPreset="school"
-        onSuccess={(result, { widget }) => {
-          setImg(result.info);
-          widget.close();
-        }}
-      >
-        {({ open }) => {
-          return (
-            <div
-              className="text-xs text-gray-500 flex items-center gap-2 cursor-pointer"
-              onClick={() => open()}
-            >
-              <Image src="/upload.png" alt="" width={28} height={28} />
-              <span>Upload a photo</span>
-            </div>
-          );
-        }}
-      </CldUploadWidget>
-      <div className="flex justify-between flex-wrap gap-4">
-        <InputField
-          label="First Name"
-          name="name"
-          defaultValue={data?.name}
-          register={register}
-          error={errors.name}
-        />
-        <InputField
-          label="Last Name"
-          name="surname"
-          defaultValue={data?.surname}
-          register={register}
-          error={errors.surname}
-        />
-        <InputField
-          label="Phone"
-          name="phone"
-          defaultValue={data?.phone}
-          register={register}
-          error={errors.phone}
-        />
-        <InputField
-          label="Address"
-          name="address"
-          defaultValue={data?.address}
-          register={register}
-          error={errors.address}
-        />
-        <InputField
-          label="Blood Type"
-          name="bloodType"
-          defaultValue={data?.bloodType}
-          register={register}
-          error={errors.bloodType}
-        />
+        <InputField label="Email" name="email" defaultValue={data?.email ?? ""} register={register} error={errors?.email} />
+        {type === "create" ? (
+          <InputField label="Password" name="password" type="password" register={register} error={errors?.password} />
+        ) : (
+          <p className="text-xs text-gray-400 w-full md:w-[30%] self-center">
+            Students change their own password under Settings.
+          </p>
+        )}
+      </Section>
+      <Section title="Personal Information">
+        <InputField label="First Name" name="name" defaultValue={data?.name} register={register} error={errors.name} />
+        <InputField label="Last Name" name="surname" defaultValue={data?.surname} register={register} error={errors.surname} />
+        <InputField label="Phone" name="phone" defaultValue={data?.phone ?? ""} register={register} error={errors.phone} />
+        <InputField label="Address" name="address" defaultValue={priv?.address} register={register} error={errors.address} />
+        <InputField label="National ID / Birth cert. no." name="nationalId" defaultValue={priv?.nationalId} register={register} />
+        <InputField label="Home county" name="county" defaultValue={priv?.county} register={register} />
+        <InputField label="Blood Type" name="bloodType" defaultValue={priv?.bloodType} register={register} error={errors.bloodType} />
         <InputField
           label="Birthday"
           name="birthday"
-          defaultValue={data?.birthday.toISOString().split("T")[0]}
+          defaultValue={dateInput(priv?.birthday)}
           register={register}
           error={errors.birthday}
           type="date"
         />
-        <InputField
-          label="Parent Id"
-          name="parentId"
-          defaultValue={data?.parentId}
+        {data && <InputField label="Id" name="id" defaultValue={data?.id} register={register} hidden />}
+        <SelectField
+          label="Sex"
+          name="sex"
           register={register}
-          error={errors.parentId}
+          options={[
+            { value: "MALE", label: "Male" },
+            { value: "FEMALE", label: "Female" },
+          ]}
+          error={errors.sex}
         />
-        {data && (
-          <InputField
-            label="Id"
-            name="id"
-            defaultValue={data?.id}
-            register={register}
-            error={errors?.id}
-            hidden
-          />
-        )}
-        <div className="flex flex-col gap-2 w-full md:w-1/4">
-          <label className="text-xs text-gray-500">Sex</label>
-          <select
-            className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full"
-            {...register("sex")}
-            defaultValue={data?.sex}
-          >
-            <option value="MALE">Male</option>
-            <option value="FEMALE">Female</option>
-          </select>
-          {errors.sex?.message && (
-            <p className="text-xs text-red-400">
-              {errors.sex.message.toString()}
-            </p>
-          )}
-        </div>
-        <div className="flex flex-col gap-2 w-full md:w-1/4">
-          <label className="text-xs text-gray-500">Grade</label>
-          <select
-            className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full"
-            {...register("gradeId")}
-            defaultValue={data?.gradeId}
-          >
-            {grades.map((grade: { id: number; level: number }) => (
-              <option value={grade.id} key={grade.id}>
-                {grade.level}
-              </option>
-            ))}
-          </select>
-          {errors.gradeId?.message && (
-            <p className="text-xs text-red-400">
-              {errors.gradeId.message.toString()}
-            </p>
-          )}
-        </div>
-        <div className="flex flex-col gap-2 w-full md:w-1/4">
-          <label className="text-xs text-gray-500">Class</label>
-          <select
-            className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full"
-            {...register("classId")}
-            defaultValue={data?.classId}
-          >
-            {classes.map(
-              (classItem: {
-                id: number;
-                name: string;
-                capacity: number;
-                _count: { students: number };
-              }) => (
-                <option value={classItem.id} key={classItem.id}>
-                  ({classItem.name} -{" "}
-                  {classItem._count.students + "/" + classItem.capacity}{" "}
-                  Capacity)
-                </option>
-              )
-            )}
-          </select>
-          {errors.classId?.message && (
-            <p className="text-xs text-red-400">
-              {errors.classId.message.toString()}
-            </p>
-          )}
-        </div>
-      </div>
-      {state.error && (
-        <span className="text-red-500">Something went wrong!</span>
-      )}
-      <button type="submit" className="bg-blue-400 text-white p-2 rounded-md">
-        {type === "create" ? "Create" : "Update"}
-      </button>
-    </form>
+        <SelectField label="Guardian" name="parentId" register={register} options={parents} placeholder="None" error={errors.parentId} />
+        <PhotoField value={img} onChange={setImg} />
+      </Section>
+      <Section title="Academic and funding">
+        <SelectField label="Programme" name="programmeId" register={register} options={programmes} placeholder="From the class" />
+        <SelectField label="Year of study" name="gradeId" register={register} options={grades} error={errors.gradeId} />
+        <SelectField label="Class" name="classId" register={register} options={classes} error={errors.classId} />
+        <SelectField
+          label="Sponsorship"
+          name="sponsorship"
+          register={register}
+          options={[
+            { value: "GSS", label: "Government sponsored (KUCCPS)" },
+            { value: "SSP", label: "Self-sponsored" },
+          ]}
+          error={errors.sponsorship}
+        />
+        <SelectField
+          label="Funding band"
+          name="fundingBand"
+          register={register}
+          options={[1, 2, 3, 4, 5].map((b) => ({ value: b, label: `Band ${b}` }))}
+          placeholder="Not yet assigned"
+          error={errors.fundingBand}
+        />
+        <InputField label="KUCCPS index number" name="kuccpsIndex" defaultValue={data?.kuccpsIndex ?? ""} register={register} />
+        <SelectField
+          label="Status"
+          name="status"
+          register={register}
+          options={["active", "deferred", "suspended", "discontinued", "graduated"].map((s) => ({
+            value: s,
+            label: s[0].toUpperCase() + s.slice(1),
+          }))}
+        />
+      </Section>
+    </FormShell>
   );
 };
 

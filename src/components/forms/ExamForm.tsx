@@ -1,89 +1,59 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { where } from "firebase/firestore";
 import { useForm } from "react-hook-form";
 import InputField from "../InputField";
-import {
-  examSchema,
-  ExamSchema,
-  subjectSchema,
-  SubjectSchema,
-} from "@/lib/formValidationSchemas";
-import {
-  createExam,
-  createSubject,
-  updateExam,
-  updateSubject,
-} from "@/lib/actions";
-import { useFormState } from "react-dom";
-import { Dispatch, SetStateAction, useEffect } from "react";
-import { toast } from "react-toastify";
-import { useRouter } from "next/navigation";
+import { examSchema, ExamSchema } from "@/lib/formValidationSchemas";
+import { createExam, updateExam } from "@/lib/actions";
+import { useAuth } from "@/lib/auth-context";
+import { useOptions } from "@/lib/options";
+import type { Lesson } from "@/lib/types";
+import { dateTimeInput, FormProps, FormShell, SelectField, useSubmit } from "./kit";
 
-const ExamForm = ({
-  type,
-  data,
-  setOpen,
-  relatedData,
-}: {
-  type: "create" | "update";
-  data?: any;
-  setOpen: Dispatch<SetStateAction<boolean>>;
-  relatedData?: any;
-}) => {
+// Lecturers can only set exams on their own lessons (enforced by the rules).
+export const useMyLessons = () => {
+  const { role, user } = useAuth();
+  const mine = role === "teacher" && user;
+  return useOptions<Lesson & { id: string }>("lessons", {
+    filters: mine ? [where("teacherId", "==", user.uid)] : [],
+    filterKey: mine ? user.uid : "all",
+    label: (l) => `${l.subjectCode ? l.subjectCode + " " : ""}${l.subjectName} - ${l.className} (${l.day.slice(0, 3)} ${l.startTime})`,
+  });
+};
+
+const ExamForm = ({ type, data, setOpen }: FormProps) => {
+  const lessons = useMyLessons();
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm<ExamSchema>({
     resolver: zodResolver(examSchema),
+    defaultValues: { kind: data?.kind ?? "main", maxScore: data?.maxScore ?? 100, lessonId: data?.lessonId ?? "" },
   });
 
-  // AFTER REACT 19 IT'LL BE USEACTIONSTATE
-
-  const [state, formAction] = useFormState(
-    type === "create" ? createExam : updateExam,
-    {
-      success: false,
-      error: false,
-    }
-  );
-
-  const onSubmit = handleSubmit((data) => {
-    console.log(data);
-    formAction(data);
+  const { busy, error, run } = useSubmit(type === "create" ? createExam : updateExam, {
+    success: `Exam has been ${type === "create" ? "created" : "updated"}!`,
+    setOpen,
   });
 
-  const router = useRouter();
-
-  useEffect(() => {
-    if (state.success) {
-      toast(`Exam has been ${type === "create" ? "created" : "updated"}!`);
-      setOpen(false);
-      router.refresh();
-    }
-  }, [state, router, type, setOpen]);
-
-  const { lessons } = relatedData;
+  if (lessons.loading) return <p className="text-sm text-gray-400">Loading...</p>;
 
   return (
-    <form className="flex flex-col gap-8" onSubmit={onSubmit}>
-      <h1 className="text-xl font-semibold">
-        {type === "create" ? "Create a new exam" : "Update the exam"}
-      </h1>
-
+    <FormShell
+      title={type === "create" ? "Create a new exam" : "Update the exam"}
+      onSubmit={handleSubmit(run)}
+      busy={busy}
+      error={error}
+      submitLabel={type === "create" ? "Create" : "Update"}
+    >
       <div className="flex justify-between flex-wrap gap-4">
-        <InputField
-          label="Exam title"
-          name="title"
-          defaultValue={data?.title}
-          register={register}
-          error={errors?.title}
-        />
+        <InputField label="Exam title" name="title" defaultValue={data?.title} register={register} error={errors?.title} />
         <InputField
           label="Start Date"
           name="startTime"
-          defaultValue={data?.startTime}
+          defaultValue={dateTimeInput(data?.startTime)}
           register={register}
           error={errors?.startTime}
           type="datetime-local"
@@ -91,48 +61,27 @@ const ExamForm = ({
         <InputField
           label="End Date"
           name="endTime"
-          defaultValue={data?.endTime}
+          defaultValue={dateTimeInput(data?.endTime)}
           register={register}
           error={errors?.endTime}
           type="datetime-local"
         />
-        {data && (
-          <InputField
-            label="Id"
-            name="id"
-            defaultValue={data?.id}
-            register={register}
-            error={errors?.id}
-            hidden
-          />
-        )}
-        <div className="flex flex-col gap-2 w-full md:w-1/4">
-          <label className="text-xs text-gray-500">Lesson</label>
-          <select
-            className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full"
-            {...register("lessonId")}
-            defaultValue={data?.teachers}
-          >
-            {lessons.map((lesson: { id: number; name: string }) => (
-              <option value={lesson.id} key={lesson.id}>
-                {lesson.name}
-              </option>
-            ))}
-          </select>
-          {errors.lessonId?.message && (
-            <p className="text-xs text-red-400">
-              {errors.lessonId.message.toString()}
-            </p>
-          )}
-        </div>
+        <InputField label="Venue" name="venue" defaultValue={data?.venue} register={register} />
+        <InputField label="Out of" name="maxScore" type="number" register={register} error={errors?.maxScore} />
+        {data && <InputField label="Id" name="id" defaultValue={data?.id} register={register} hidden />}
+        <SelectField
+          label="Sitting"
+          name="kind"
+          register={register}
+          options={[
+            { value: "main", label: "Main examination" },
+            { value: "supplementary", label: "Supplementary" },
+            { value: "special", label: "Special" },
+          ]}
+        />
+        <SelectField label="Lesson" name="lessonId" register={register} options={lessons.options} error={errors.lessonId} wide />
       </div>
-      {state.error && (
-        <span className="text-red-500">Something went wrong!</span>
-      )}
-      <button className="bg-blue-400 text-white p-2 rounded-md">
-        {type === "create" ? "Create" : "Update"}
-      </button>
-    </form>
+    </FormShell>
   );
 };
 

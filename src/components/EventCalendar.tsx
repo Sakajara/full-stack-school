@@ -1,26 +1,29 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { isoDate } from "@/lib/utils";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 
-type ValuePiece = Date | null;
-
-type Value = ValuePiece | [ValuePiece, ValuePiece];
-
 const EventCalendar = () => {
-  const [value, onChange] = useState<Value>(new Date());
-
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const current = searchParams.get("date");
+  const value = current && !Number.isNaN(new Date(current).getTime()) ? new Date(current) : new Date();
 
-  useEffect(() => {
-    if (value instanceof Date) {
-      router.push(`?date=${value}`);
-    }
-  }, [value, router]);
-
-  return <Calendar onChange={onChange} value={value} />;
+  return (
+    <Calendar
+      value={value}
+      onChange={(v) => {
+        if (v instanceof Date) {
+          const params = new URLSearchParams(searchParams.toString());
+          params.set("date", isoDate(v));
+          router.replace(`${pathname}?${params}`, { scroll: false });
+        }
+      }}
+    />
+  );
 };
 
 export default EventCalendar;

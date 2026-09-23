@@ -1,3 +1,4 @@
+import { toShillings } from "./money";
 import type {
   Account,
   FundingBand,
@@ -156,3 +157,36 @@ export const paymentId = (method: string, reference: string) =>
 
 // M-Pesa confirmation codes are 10 upper-case letters and digits.
 export const isMpesaCode = (reference: string) => /^[A-Z0-9]{10}$/.test(reference.trim().toUpperCase());
+
+// Reads a beneficiary schedule pasted from HELB, the Universities Fund or a
+// bursary committee: one "admission number, amount" per line.
+export const parseAllocations = (text: string) => {
+  const lines = text
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(Boolean);
+  const rows: { admissionNo: string; amount: number; line: number }[] = [];
+  const errors: string[] = [];
+  lines.forEach((line, i) => {
+    // Accepts "ADM, 12000", "ADM<TAB>12,000" or "ADM 12000".
+    const m = line.match(/^(.+?)[\s,;\t]+([\d, ]+(?:\.\d+)?)$/);
+    if (!m) {
+      errors.push(`Line ${i + 1}: expected "admission number, amount"`);
+      return;
+    }
+    const amount = toShillings(m[2]);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      errors.push(`Line ${i + 1}: invalid amount`);
+      return;
+    }
+    // A space inside an admission number would otherwise be read as part of
+    // the amount ("J17 1234 18000"); no single allocation is this large.
+    if (amount > 10_000_000) {
+      errors.push(`Line ${i + 1}: amount too large; separate the admission number and amount with a comma`);
+      return;
+    }
+    rows.push({ admissionNo: m[1].trim().toUpperCase(), amount, line: i + 1 });
+  });
+  return { rows, errors };
+};
+

@@ -1,69 +1,59 @@
-import prisma from "@/lib/prisma";
-import { auth } from "@clerk/nextjs/server";
+"use client";
 
-const Announcements = async () => {
-  const { userId, sessionClaims } = auth();
-  const role = (sessionClaims?.metadata as { role?: string })?.role;
+import { col, useLiveQuery } from "@/lib/live";
+import { firstIds, useMyClassIds } from "@/lib/scope";
+import type { Announcement } from "@/lib/types";
+import { formatDate } from "@/lib/utils";
+import { and, limit, or, orderBy, query, where } from "firebase/firestore";
+import Link from "next/link";
 
-  const roleConditions = {
-    teacher: { lessons: { some: { teacherId: userId! } } },
-    student: { students: { some: { id: userId! } } },
-    parent: { students: { some: { parentId: userId! } } },
-  };
+const COLORS = ["bg-lamaSkyLight", "bg-lamaPurpleLight", "bg-lamaYellowLight"];
 
-  const data = await prisma.announcement.findMany({
-    take: 3,
-    orderBy: { date: "desc" },
-    where: {
-      ...(role !== "admin" && {
-        OR: [
-          { classId: null },
-          { class: roleConditions[role as keyof typeof roleConditions] || {} },
-        ],
-      }),
-    },
-  });
+const Announcements = () => {
+  const scope = useMyClassIds();
+
+  // Everyone sees institution-wide announcements (no class) plus those for
+  // their own classes. Office staff see all.
+  const { data } = useLiveQuery<Announcement>(
+    () =>
+      scope.loading
+        ? null
+        : scope.ids === null
+        ? query(col("announcements"), where("active", "==", true), orderBy("date", "desc"), limit(3))
+        : query(
+            col("announcements"),
+            and(
+              where("active", "==", true),
+              or(where("classId", "==", null), where("classId", "in", firstIds(scope.ids)))
+            ),
+            orderBy("date", "desc"),
+            limit(3)
+          ),
+    `ann|${scope.loading}|${scope.ids?.join(",")}`
+  );
 
   return (
     <div className="bg-white p-4 rounded-md">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold">Announcements</h1>
-        <span className="text-xs text-gray-400">View All</span>
+        <Link href="/list/announcements" className="text-xs text-gray-400">
+          View All
+        </Link>
       </div>
       <div className="flex flex-col gap-4 mt-4">
-        {data[0] && (
-          <div className="bg-lamaSkyLight rounded-md p-4">
-            <div className="flex items-center justify-between">
-              <h2 className="font-medium">{data[0].title}</h2>
-              <span className="text-xs text-gray-400 bg-white rounded-md px-1 py-1">
-                {new Intl.DateTimeFormat("en-GB").format(data[0].date)}
+        {data.length === 0 && <p className="text-sm text-gray-400">No announcements.</p>}
+        {data.map((a, i) => (
+          <div className={`${COLORS[i % 3]} rounded-md p-4`} key={a.id}>
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="font-medium">{a.title}</h2>
+              <span className="text-xs text-gray-400 bg-white rounded-md px-1 py-1 whitespace-nowrap">
+                {formatDate(a.date)}
               </span>
             </div>
-            <p className="text-sm text-gray-400 mt-1">{data[0].description}</p>
+            {a.className && <p className="text-[11px] text-gray-500">{a.className}</p>}
+            <p className="text-sm text-gray-500 mt-1 whitespace-pre-line">{a.description}</p>
           </div>
-        )}
-        {data[1] && (
-          <div className="bg-lamaPurpleLight rounded-md p-4">
-            <div className="flex items-center justify-between">
-              <h2 className="font-medium">{data[1].title}</h2>
-              <span className="text-xs text-gray-400 bg-white rounded-md px-1 py-1">
-                {new Intl.DateTimeFormat("en-GB").format(data[1].date)}
-              </span>
-            </div>
-            <p className="text-sm text-gray-400 mt-1">{data[1].description}</p>
-          </div>
-        )}
-        {data[2] && (
-          <div className="bg-lamaYellowLight rounded-md p-4">
-            <div className="flex items-center justify-between">
-              <h2 className="font-medium">{data[2].title}</h2>
-              <span className="text-xs text-gray-400 bg-white rounded-md px-1 py-1">
-                {new Intl.DateTimeFormat("en-GB").format(data[2].date)}
-              </span>
-            </div>
-            <p className="text-sm text-gray-400 mt-1">{data[2].description}</p>
-          </div>
-        )}
+        ))}
       </div>
     </div>
   );

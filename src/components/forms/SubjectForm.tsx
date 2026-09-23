@@ -5,111 +5,73 @@ import { useForm } from "react-hook-form";
 import InputField from "../InputField";
 import { subjectSchema, SubjectSchema } from "@/lib/formValidationSchemas";
 import { createSubject, updateSubject } from "@/lib/actions";
-import { useFormState } from "react-dom";
-import { Dispatch, SetStateAction, useEffect } from "react";
-import { toast } from "react-toastify";
-import { useRouter } from "next/navigation";
+import { useOptions } from "@/lib/options";
+import { FormProps, FormShell, SelectField, useSubmit } from "./kit";
 
-const SubjectForm = ({
-  type,
-  data,
-  setOpen,
-  relatedData,
-}: {
-  type: "create" | "update";
-  data?: any;
-  setOpen: Dispatch<SetStateAction<boolean>>;
-  relatedData?: any;
-}) => {
+const SubjectForm = ({ type, data, setOpen }: FormProps) => {
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm<SubjectSchema>({
     resolver: zodResolver(subjectSchema),
+    defaultValues: { teachers: data?.teacherIds ?? [], creditHours: data?.creditHours ?? 3 },
   });
 
-  // AFTER REACT 19 IT'LL BE USEACTIONSTATE
-
-  const [state, formAction] = useFormState(
-    type === "create" ? createSubject : updateSubject,
-    {
-      success: false,
-      error: false,
-    }
-  );
-
-  const onSubmit = handleSubmit((data) => {
-    console.log(data);
-    formAction(data);
+  const { busy, error, run } = useSubmit(type === "create" ? createSubject : updateSubject, {
+    success: `Unit has been ${type === "create" ? "created" : "updated"}!`,
+    setOpen,
   });
 
-  const router = useRouter();
+  const teachers = useOptions("teachers", { order: "surname" });
+  const departments = useOptions("departments");
 
-  useEffect(() => {
-    if (state.success) {
-      toast(`Subject has been ${type === "create" ? "created" : "updated"}!`);
-      setOpen(false);
-      router.refresh();
-    }
-  }, [state, router, type, setOpen]);
-
-  const { teachers } = relatedData;
+  if (teachers.loading || departments.loading) return <p className="text-sm text-gray-400">Loading...</p>;
 
   return (
-    <form className="flex flex-col gap-8" onSubmit={onSubmit}>
-      <h1 className="text-xl font-semibold">
-        {type === "create" ? "Create a new subject" : "Update the subject"}
-      </h1>
-
+    <FormShell
+      title={type === "create" ? "Create a new unit" : "Update the unit"}
+      onSubmit={handleSubmit(run)}
+      busy={busy}
+      error={error}
+      submitLabel={type === "create" ? "Create" : "Update"}
+    >
       <div className="flex justify-between flex-wrap gap-4">
         <InputField
-          label="Subject name"
-          name="name"
-          defaultValue={data?.name}
+          label="Unit code"
+          name="code"
+          defaultValue={data?.code}
           register={register}
-          error={errors?.name}
+          error={errors?.code}
+          hint="e.g. SCO 201"
         />
-        {data && (
-          <InputField
-            label="Id"
-            name="id"
-            defaultValue={data?.id}
-            register={register}
-            error={errors?.id}
-            hidden
-          />
-        )}
-        <div className="flex flex-col gap-2 w-full md:w-1/4">
-          <label className="text-xs text-gray-500">Teachers</label>
-          <select
-            multiple
-            className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full"
-            {...register("teachers")}
-            defaultValue={data?.teachers}
-          >
-            {teachers.map(
-              (teacher: { id: string; name: string; surname: string }) => (
-                <option value={teacher.id} key={teacher.id}>
-                  {teacher.name + " " + teacher.surname}
-                </option>
-              )
-            )}
-          </select>
-          {errors.teachers?.message && (
-            <p className="text-xs text-red-400">
-              {errors.teachers.message.toString()}
-            </p>
-          )}
-        </div>
+        <InputField label="Unit name" name="name" defaultValue={data?.name} register={register} error={errors?.name} />
+        <InputField
+          label="Credit hours"
+          name="creditHours"
+          type="number"
+          register={register}
+          error={errors?.creditHours}
+        />
+        {data && <InputField label="Id" name="id" defaultValue={data?.id} register={register} hidden />}
+        <SelectField
+          label="Department"
+          name="departmentId"
+          register={register}
+          options={departments.options}
+          defaultValue={data?.departmentId ?? ""}
+          placeholder="None"
+        />
+        <SelectField
+          label="Lecturers"
+          name="teachers"
+          register={register}
+          options={teachers.options}
+          error={errors.teachers}
+          multiple
+        />
       </div>
-      {state.error && (
-        <span className="text-red-500">Something went wrong!</span>
-      )}
-      <button className="bg-blue-400 text-white p-2 rounded-md">
-        {type === "create" ? "Create" : "Update"}
-      </button>
-    </form>
+    </FormShell>
   );
 };
 

@@ -139,6 +139,7 @@ export type Lesson = Base &
   Archivable & {
     name: string;
     day: Day;
+    slot: string;
     startTime: string;
     endTime: string;
     venue?: string;

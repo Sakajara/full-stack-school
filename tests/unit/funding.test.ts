@@ -88,3 +88,22 @@ describe("payment references", () => {
     expect(isMpesaCode("SJK4H7X2P")).toBe(false);
   });
 });
+
+describe("parseAllocations", () => {
+  it("reads pasted schedules in common shapes", async () => {
+    const { parseAllocations } = await import("@/lib/funding");
+    const r = parseAllocations("SCT221-0001/2025, 18000\nsct221-0002/2025\t12,500\n\nSCT221-0003/2025 9 000");
+    expect(r.errors).toEqual([]);
+    expect(r.rows).toEqual([
+      { admissionNo: "SCT221-0001/2025", amount: 18000, line: 1 },
+      { admissionNo: "SCT221-0002/2025", amount: 12500, line: 2 },
+      { admissionNo: "SCT221-0003/2025", amount: 9000, line: 3 },
+    ]);
+  });
+  it("reports bad lines", async () => {
+    const { parseAllocations } = await import("@/lib/funding");
+    const r = parseAllocations("SCT221-0001/2025\nX, -5");
+    expect(r.rows).toEqual([]);
+    expect(r.errors.length).toBe(2);
+  });
+});
