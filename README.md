@@ -63,15 +63,17 @@ archiving.
 1. Create a Firebase project at https://console.firebase.google.com (the
    Spark plan is enough).
 2. In the project: Build > Authentication > enable Email/Password; Build >
-   Firestore Database > create (a region near Kenya, e.g. `africa-south1`,
-   or `europe-west1`).
+   Firestore Database > create it in `africa-south1` (Johannesburg, closest
+   to Kenya). Do this before the first deploy: deploying rules to a project
+   without a database creates one in the United States (`nam5`), and a
+   database's location can never be changed.
 3. Project settings > Your apps > add a Web app, then copy its config into
    `.env.local` (see `.env.example`).
 4. Deploy:
 
    ```bash
    npx firebase login
-   npx firebase use --add        # choose the project
+   # set your project id as "prod" in .firebaserc
    npm run deploy                # builds, then deploys hosting, rules and indexes
    ```
 

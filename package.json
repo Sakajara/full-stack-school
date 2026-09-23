@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run tests/unit",
     "test:rules": "firebase emulators:exec --only firestore --project demo-chuo \"vitest run tests/rules\"",
-    "deploy": "next build && firebase deploy --only hosting,firestore",
+    "deploy": "next build && firebase deploy --only hosting,firestore --project prod",
     "test:flow": "firebase emulators:exec --only auth,firestore --project demo-chuo \"vitest run tests/integration\""
   },
   "dependencies": {
