@@ -52,7 +52,7 @@ export default function DashboardLayout({
       {drawer && (
         <div className="fixed inset-0 z-50 md:hidden" role="dialog" aria-modal="true">
           <div className="absolute inset-0 bg-black bg-opacity-40" onClick={() => setDrawer(false)} />
-          <div className="absolute left-0 top-0 h-full w-72 max-w-[85%] bg-white p-4 overflow-y-auto">
+          <div className="absolute left-0 top-0 h-full w-72 max-w-[85%] bg-surface p-4 overflow-y-auto">
             <div className="flex items-center justify-between">
               <span className="flex items-center gap-2 font-bold">
                 <Image src="/logo.png" alt="" width={28} height={28} />
@@ -68,7 +68,7 @@ export default function DashboardLayout({
       )}
 
       {/* RIGHT */}
-      <main className="w-full md:w-[92%] lg:w-[84%] xl:w-[86%] bg-[#F7F8FA] overflow-y-auto flex flex-col">
+      <main className="w-full md:w-[92%] lg:w-[84%] xl:w-[86%] bg-canvas overflow-y-auto flex flex-col">
         <Navbar onMenu={() => setDrawer(true)} />
         {children}
       </main>

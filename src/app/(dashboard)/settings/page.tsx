@@ -5,17 +5,44 @@ import { saveInstitution } from "@/lib/actions";
 import { authErrorMessage, useAuth } from "@/lib/auth-context";
 import { LOGIN_DOMAIN } from "@/lib/firebase";
 import { institutionSchema } from "@/lib/formValidationSchemas";
+import { ThemeChoice, useTheme } from "@/lib/theme";
 import { useState } from "react";
 import { toast } from "react-toastify";
 
 const field = "ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full";
 
 const Card = ({ title, children }: { title: string; children: React.ReactNode }) => (
-  <section className="bg-white p-4 rounded-md flex flex-col gap-3">
+  <section className="bg-surface p-4 rounded-md flex flex-col gap-3">
     <h2 className="text-lg font-semibold">{title}</h2>
     {children}
   </section>
 );
+
+const AppearanceCard = () => {
+  const { choice, set } = useTheme();
+  const options: { value: ThemeChoice; label: string }[] = [
+    { value: "system", label: "Same as device" },
+    { value: "light", label: "Light" },
+    { value: "dark", label: "Dark" },
+  ];
+  return (
+    <Card title="Appearance">
+      <div className="flex gap-2 flex-wrap" role="radiogroup" aria-label="Theme">
+        {options.map((o) => (
+          <button
+            key={o.value}
+            role="radio"
+            aria-checked={choice === o.value}
+            onClick={() => set(o.value)}
+            className={`px-4 py-2 rounded-md text-sm ${choice === o.value ? "bg-lamaSky" : "bg-gray-100"}`}
+          >
+            {o.label}
+          </button>
+        ))}
+      </div>
+    </Card>
+  );
+};
 
 const PasswordCard = () => {
   const { changePassword } = useAuth();
@@ -155,6 +182,7 @@ const SettingsPage = () => {
   const { role } = useAuth();
   return (
     <div className="p-4 pt-0 flex flex-col gap-4 xl:w-2/3">
+      <AppearanceCard />
       <PasswordCard />
       <RecoveryCard />
       {role === "admin" && <InstitutionCard />}

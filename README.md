@@ -44,6 +44,26 @@ http://localhost:3000, follow "Set it up now" to create the institution and
 the first administrator, and sign in. The emulator UI at
 http://localhost:4000 shows the data.
 
+## Loading an institution's structure
+
+`data/mmu.json` holds the public academic structure of the Multimedia
+University of Kenya: its 6 faculties and 16 departments, 25 degree and 5
+diploma programmes with their KUCCPS codes, 18 units from its e-learning
+catalogue, and year-1 programme costs. Each part names its source. Load it
+(or a file in the same shape for another institution) as an administrator:
+
+```bash
+CHUO_ADMIN_USERNAME=admin CHUO_ADMIN_PASSWORD=... npm run seed:structure data/mmu.json
+```
+
+It can be run again safely: records are matched by code and updated.
+
+## Themes
+
+Light and dark themes follow the device by default; users can pick one
+under Settings or with the moon/sun button in the top bar. All colours are
+CSS variables in `src/app/globals.css`, so a theme is changed in one place.
+
 ## Tests
 
 ```bash

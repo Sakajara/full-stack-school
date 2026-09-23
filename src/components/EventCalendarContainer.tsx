@@ -8,7 +8,7 @@ import Link from "next/link";
 const EventCalendarContainer = () => {
   const date = useSearchParams().get("date");
   return (
-    <div className="bg-white p-4 rounded-md">
+    <div className="bg-surface p-4 rounded-md">
       <EventCalendar />
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold my-4">Events</h1>

@@ -41,7 +41,7 @@ const AttendanceChartContainer = () => {
   const shown = data[5].present + data[5].absent > 0 ? data : data.slice(0, 5);
 
   return (
-    <div className="bg-white rounded-lg p-4 h-full">
+    <div className="bg-surface rounded-lg p-4 h-full">
       <div className="flex justify-between items-center">
         <h1 className="text-lg font-semibold">Attendance this week</h1>
       </div>

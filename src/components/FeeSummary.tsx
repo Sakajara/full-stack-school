@@ -19,10 +19,10 @@ const FeeSummary = ({ studentId, name }: { studentId: string; name?: string }) =
   const cleared = isClearedForExams(account, threshold);
   const pct = percentCleared(account);
 
-  if (loading) return <div className="bg-white p-4 rounded-md text-sm text-gray-400">Loading fees...</div>;
+  if (loading) return <div className="bg-surface p-4 rounded-md text-sm text-gray-400">Loading fees...</div>;
 
   return (
-    <div className="bg-white p-4 rounded-md flex flex-col gap-3">
+    <div className="bg-surface p-4 rounded-md flex flex-col gap-3">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold">Fees{name ? ` (${name})` : ""}</h1>
         <Link href={`/fees/statement?id=${studentId}`} className="text-xs text-gray-400">

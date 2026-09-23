@@ -79,7 +79,7 @@ const FinancePage = () => {
         <div className="w-full h-[450px]">
           <FinanceChart />
         </div>
-        <div className="bg-white p-4 rounded-md">
+        <div className="bg-surface p-4 rounded-md">
           <h1 className="text-lg font-semibold">By payer</h1>
           <p className="text-xs text-gray-400">Government shares that arrive late or in part show as a gap here.</p>
           <div className="overflow-x-auto">
@@ -116,7 +116,7 @@ const FinancePage = () => {
         </div>
       </div>
       <div className="w-full xl:w-1/3 flex flex-col gap-8">
-        <div className="bg-white p-4 rounded-md">
+        <div className="bg-surface p-4 rounded-md">
           <h1 className="text-lg font-semibold">Largest balances</h1>
           <ul className="mt-2 flex flex-col">
             {arrears.data.map((a) => (
@@ -131,7 +131,7 @@ const FinancePage = () => {
             {!arrears.loading && !arrears.data.length && <li className="text-sm text-gray-400 py-2">No balances.</li>}
           </ul>
         </div>
-        <div className="bg-white p-4 rounded-md flex flex-col gap-2 text-sm">
+        <div className="bg-surface p-4 rounded-md flex flex-col gap-2 text-sm">
           <h1 className="text-lg font-semibold">Quick actions</h1>
           <Link className="underline" href="/fees/payments?status=pending">Verify reported payments</Link>
           <Link className="underline" href="/fees/remittances">Record a HELB or bursary transfer</Link>

@@ -44,7 +44,7 @@ const TranscriptPage = () => {
 
   if (role === "parent" && !id) {
     return (
-      <div className="bg-white p-4 rounded-md m-4 mt-0 flex flex-col gap-2">
+      <div className="bg-surface p-4 rounded-md m-4 mt-0 flex flex-col gap-2">
         <h1 className="text-lg font-semibold">Transcript</h1>
         {children.data.map((c) => (
           <Link key={c.id} href={`/transcript?id=${c.id}`} className="underline text-sm">
@@ -77,7 +77,7 @@ const TranscriptPage = () => {
   const s = student.data;
 
   return (
-    <div className="bg-white p-4 rounded-md m-4 mt-0 flex flex-col gap-6">
+    <div className="bg-surface p-4 rounded-md m-4 mt-0 flex flex-col gap-6">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-3">
           <Image src="/logo.png" alt="" width={40} height={40} />

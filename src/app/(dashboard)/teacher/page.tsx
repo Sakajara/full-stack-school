@@ -13,7 +13,7 @@ const TeacherPage = () => {
     <div className="flex-1 p-4 flex gap-4 flex-col xl:flex-row">
       {/* LEFT */}
       <div className="w-full xl:w-2/3">
-        <div className="h-full bg-white p-4 rounded-md">
+        <div className="h-full bg-surface p-4 rounded-md">
           <div className="flex items-center justify-between">
             <h1 className="text-xl font-semibold">Schedule</h1>
             <div className="flex items-center gap-2 text-xs text-gray-500">

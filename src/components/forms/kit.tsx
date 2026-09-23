@@ -113,7 +113,7 @@ export const SelectField = ({
     <select
       id={`f-${name}`}
       multiple={multiple}
-      className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full bg-white"
+      className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full bg-surface"
       {...register(name)}
       {...(defaultValue !== undefined ? { defaultValue } : {})}
     >

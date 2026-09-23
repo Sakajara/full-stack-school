@@ -61,7 +61,7 @@ const Compose = ({ replyTo, onSent }: { replyTo?: { id: string; name: string } |
           required
           value={to}
           onChange={(e) => setTo(e.target.value)}
-          className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm bg-white"
+          className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm bg-surface"
         >
           <option value="">Choose recipient...</option>
           {groups.map((g) => (
@@ -111,7 +111,7 @@ const MessagesPage = () => {
   );
 
   return (
-    <div className="bg-white p-4 rounded-md flex-1 m-4 mt-0 flex flex-col gap-4">
+    <div className="bg-surface p-4 rounded-md flex-1 m-4 mt-0 flex flex-col gap-4">
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <h1 className="text-lg font-semibold">Messages</h1>
         <div className="flex gap-2 text-sm">

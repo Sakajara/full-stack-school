@@ -1,7 +1,7 @@
 // Offline support. Data comes from Firestore's own offline cache; this
 // worker keeps the app shell (pages, scripts, styles, icons) available
 // without a connection.
-const VERSION = "chuo-v1";
+const VERSION = "chuo-v2";
 const SHELL = ["/", "/manifest.webmanifest", "/icon-192.png", "/logo.png", "/noAvatar.png"];
 
 self.addEventListener("install", (event) => {

@@ -89,7 +89,7 @@ const SetupPage = () => {
 
   return (
     <div className="min-h-screen bg-lamaSkyLight flex justify-center p-4">
-      <form onSubmit={submit} className="bg-white rounded-md shadow-2xl p-6 sm:p-10 w-full max-w-2xl flex flex-col gap-6 my-auto">
+      <form onSubmit={submit} className="bg-surface rounded-md shadow-2xl p-6 sm:p-10 w-full max-w-2xl flex flex-col gap-6 my-auto">
         <div>
           <h1 className="text-xl font-bold flex items-center gap-2">
             <Image src="/logo.png" alt="" width={24} height={24} />

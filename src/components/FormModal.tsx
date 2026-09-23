@@ -188,7 +188,7 @@ const FormModal = ({ table, type, data, id }: FormContainerProps) => {
           role="dialog"
           aria-modal="true"
         >
-          <div className="bg-white p-4 rounded-md relative w-full md:w-[70%] lg:w-[60%] xl:w-[50%] 2xl:w-[40%] my-4">
+          <div className="bg-surface p-4 rounded-md relative w-full md:w-[70%] lg:w-[60%] xl:w-[50%] 2xl:w-[40%] my-4">
             {body}
             <button
               className="absolute top-4 right-4 cursor-pointer"

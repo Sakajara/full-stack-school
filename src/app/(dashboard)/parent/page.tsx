@@ -21,12 +21,12 @@ const ParentPage = () => {
       {/* LEFT */}
       <div className="w-full xl:w-2/3 flex flex-col gap-4">
         {!loading && students.length === 0 && (
-          <div className="bg-white p-4 rounded-md text-sm text-gray-400">
+          <div className="bg-surface p-4 rounded-md text-sm text-gray-400">
             No students are linked to your account yet. Contact the registry office.
           </div>
         )}
         {students.map((student) => (
-          <div className="bg-white p-4 rounded-md" key={student.id}>
+          <div className="bg-surface p-4 rounded-md" key={student.id}>
             <h1 className="text-xl font-semibold">
               Schedule ({student.name + " " + student.surname}, {student.className})
             </h1>

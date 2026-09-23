@@ -51,7 +51,7 @@ const LoginPage = () => {
     <div className="min-h-screen flex items-center justify-center bg-lamaSkyLight p-4">
       <form
         onSubmit={submit}
-        className="bg-white p-8 sm:p-12 rounded-md shadow-2xl flex flex-col gap-2 w-full max-w-sm"
+        className="bg-surface p-8 sm:p-12 rounded-md shadow-2xl flex flex-col gap-2 w-full max-w-sm"
       >
         <h1 className="text-xl font-bold flex items-center gap-2">
           <Image src="/logo.png" alt="" width={24} height={24} />

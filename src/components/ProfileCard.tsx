@@ -46,7 +46,7 @@ const ProfileCard = ({
 );
 
 export const SmallCard = ({ icon, value, label }: { icon: string; value: React.ReactNode; label: string }) => (
-  <div className="bg-white p-4 rounded-md flex gap-4 w-full md:w-[48%] xl:w-[45%] 2xl:w-[48%]">
+  <div className="bg-surface p-4 rounded-md flex gap-4 w-full md:w-[48%] xl:w-[45%] 2xl:w-[48%]">
     <Image src={icon} alt="" width={24} height={24} className="w-6 h-6" />
     <div className="">
       <h1 className="text-xl font-semibold">{value}</h1>

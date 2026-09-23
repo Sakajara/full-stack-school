@@ -75,7 +75,7 @@ const MarkSheetPage = () => {
   };
 
   return (
-    <div className="bg-white p-4 rounded-md flex-1 m-4 mt-0 flex flex-col gap-4">
+    <div className="bg-surface p-4 rounded-md flex-1 m-4 mt-0 flex flex-col gap-4">
       <div>
         <h1 className="text-lg font-semibold">
           Mark sheet: {a.data.subjectCode} {a.data.title}

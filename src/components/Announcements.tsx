@@ -33,7 +33,7 @@ const Announcements = () => {
   );
 
   return (
-    <div className="bg-white p-4 rounded-md">
+    <div className="bg-surface p-4 rounded-md">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold">Announcements</h1>
         <Link href="/list/announcements" className="text-xs text-gray-400">
@@ -46,7 +46,7 @@ const Announcements = () => {
           <div className={`${COLORS[i % 3]} rounded-md p-4`} key={a.id}>
             <div className="flex items-center justify-between gap-2">
               <h2 className="font-medium">{a.title}</h2>
-              <span className="text-xs text-gray-400 bg-white rounded-md px-1 py-1 whitespace-nowrap">
+              <span className="text-xs text-gray-400 bg-surface rounded-md px-1 py-1 whitespace-nowrap">
                 {formatDate(a.date)}
               </span>
             </div>

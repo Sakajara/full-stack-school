@@ -48,7 +48,7 @@ const IssuePanel = () => {
     }
   };
 
-  const select = "ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm bg-white";
+  const select = "ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm bg-surface";
 
   return (
     <form onSubmit={run} className="mt-4 bg-lamaSkyLight rounded-md p-4 flex flex-col gap-3">

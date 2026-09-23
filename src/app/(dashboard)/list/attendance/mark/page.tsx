@@ -76,7 +76,7 @@ const MarkAttendancePage = () => {
   const absent = students.data.filter((s) => present[s.id] === false).length;
 
   return (
-    <div className="bg-white p-4 rounded-md flex-1 m-4 mt-0 flex flex-col gap-4">
+    <div className="bg-surface p-4 rounded-md flex-1 m-4 mt-0 flex flex-col gap-4">
       <div>
         <h1 className="text-lg font-semibold">
           Register: {lesson.data.subjectCode} {lesson.data.subjectName}

@@ -44,7 +44,7 @@ const ProfilePage = () => {
           { icon: "/phone.png", value: p?.phone, label: "Phone" },
         ]}
       />
-      <div className="bg-white p-4 rounded-md text-sm flex flex-col gap-2">
+      <div className="bg-surface p-4 rounded-md text-sm flex flex-col gap-2">
         <p>
           Signed in as <strong>{profile?.username}</strong> ({ROLE_LABEL[role]}).
         </p>
@@ -56,7 +56,7 @@ const ProfilePage = () => {
         </p>
       </div>
       {role === "parent" && (
-        <div className="bg-white p-4 rounded-md text-sm flex flex-col gap-2">
+        <div className="bg-surface p-4 rounded-md text-sm flex flex-col gap-2">
           <h2 className="font-semibold">Students</h2>
           {children.data.map((c) => (
             <div key={c.id} className="flex justify-between flex-wrap gap-2 border-b border-gray-100 py-2">

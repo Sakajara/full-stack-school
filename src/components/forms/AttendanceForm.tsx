@@ -32,7 +32,7 @@ const AttendanceForm = ({ setOpen }: FormProps) => {
             required
             value={lesson}
             onChange={(e) => setLesson(e.target.value)}
-            className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full bg-white"
+            className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full bg-surface"
           >
             <option value="">Select...</option>
             {lessons.options.map((o) => (

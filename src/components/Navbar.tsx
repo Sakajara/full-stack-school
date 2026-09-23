@@ -2,6 +2,7 @@
 
 import { useAuth } from "@/lib/auth-context";
 import { col, useLiveQuery } from "@/lib/live";
+import { useTheme } from "@/lib/theme";
 import { ROLE_LABEL } from "@/lib/types";
 import { limit, query, where } from "firebase/firestore";
 import Image from "next/image";
@@ -36,11 +37,12 @@ const Navbar = ({ onMenu }: { onMenu?: () => void }) => {
   };
 
   const count = unread.data.length;
+  const theme = useTheme();
 
   return (
     <div className="flex items-center justify-between gap-4 p-4 print:hidden">
       <button
-        className="md:hidden bg-white rounded-md w-9 h-9 flex flex-col items-center justify-center gap-[5px] shrink-0"
+        className="md:hidden bg-surface rounded-md w-9 h-9 flex flex-col items-center justify-center gap-[5px] shrink-0"
         onClick={onMenu}
         aria-label="Open menu"
       >
@@ -65,7 +67,7 @@ const Navbar = ({ onMenu }: { onMenu?: () => void }) => {
       <div className="flex items-center gap-6 justify-end w-full">
         <Link
           href="/list/messages"
-          className="bg-white rounded-full w-7 h-7 flex items-center justify-center relative"
+          className="bg-surface rounded-full w-7 h-7 flex items-center justify-center relative"
           aria-label={`Messages${count ? `, ${count} unread` : ""}`}
         >
           <Image src="/message.png" alt="" width={20} height={20} />
@@ -75,9 +77,26 @@ const Navbar = ({ onMenu }: { onMenu?: () => void }) => {
             </span>
           )}
         </Link>
+        <button
+          onClick={() => theme.set(theme.dark ? "light" : "dark")}
+          className="bg-surface rounded-full w-7 h-7 flex items-center justify-center text-gray-500"
+          aria-label={theme.dark ? "Switch to light theme" : "Switch to dark theme"}
+          title={theme.dark ? "Light theme" : "Dark theme"}
+        >
+          {theme.dark ? (
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+              <circle cx="12" cy="12" r="4" />
+              <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
+            </svg>
+          ) : (
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+              <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+            </svg>
+          )}
+        </button>
         <Link
           href="/list/announcements"
-          className="bg-white rounded-full w-7 h-7 flex items-center justify-center"
+          className="bg-surface rounded-full w-7 h-7 flex items-center justify-center"
           aria-label="Announcements"
         >
           <Image src="/announcement.png" alt="" width={20} height={20} />

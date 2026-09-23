@@ -26,7 +26,7 @@ const UserCard = ({ type }: { type: keyof typeof SOURCES }) => {
       className="rounded-2xl odd:bg-lamaPurple even:bg-lamaYellow p-4 flex-1 min-w-[130px]"
     >
       <div className="flex justify-between items-center">
-        <span className="text-[10px] bg-white px-2 py-1 rounded-full text-green-600">
+        <span className="text-[10px] bg-surface px-2 py-1 rounded-full text-green-600">
           {institution?.academicYear ?? ""}
         </span>
       </div>

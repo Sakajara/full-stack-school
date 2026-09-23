@@ -126,7 +126,7 @@ const StatementPage = () => {
 
   if (role === "parent" && !id) {
     return (
-      <div className="bg-white p-4 rounded-md m-4 mt-0 flex flex-col gap-2">
+      <div className="bg-surface p-4 rounded-md m-4 mt-0 flex flex-col gap-2">
         <h1 className="text-lg font-semibold">Fee statement</h1>
         {children.data.map((c) => (
           <Link key={c.id} href={`/fees/statement?id=${c.id}`} className="underline text-sm">
@@ -179,7 +179,7 @@ const StatementPage = () => {
 
   return (
     <div className="p-4 pt-0 flex flex-col xl:flex-row gap-4">
-      <div className="w-full xl:w-2/3 bg-white p-4 rounded-md flex flex-col gap-4">
+      <div className="w-full xl:w-2/3 bg-surface p-4 rounded-md flex flex-col gap-4">
         <div className="flex items-start justify-between gap-4 flex-wrap print:hidden">
           <div>
             <h1 className="text-lg font-semibold">{showCard ? "Exam card" : "Fee statement"}</h1>
@@ -217,10 +217,10 @@ const StatementPage = () => {
                 <thead>
                   <tr className="text-left text-gray-500 border-b border-gray-200">
                     <th className="py-2">Date</th>
-                    <th>Reference</th>
+                    <th className="hidden sm:table-cell">Reference</th>
                     <th>Description</th>
-                    <th className="text-right">Debit</th>
-                    <th className="text-right">Credit</th>
+                    <th className="text-right hidden sm:table-cell">Debit</th>
+                    <th className="text-right hidden sm:table-cell">Credit</th>
                     <th className="text-right">Balance</th>
                   </tr>
                 </thead>
@@ -229,14 +229,18 @@ const StatementPage = () => {
                     running += l.debit - l.credit;
                     return (
                       <tr key={i} className="border-b border-gray-100 align-top">
-                        <td className="py-2 whitespace-nowrap">{formatDate(l.date)}</td>
-                        <td className="font-mono text-xs">{l.ref}</td>
+                        <td className="py-2 whitespace-nowrap text-xs sm:text-sm">{formatDate(l.date)}</td>
+                        <td className="font-mono text-xs hidden sm:table-cell">{l.ref}</td>
                         <td>
                           {l.description}
+                          <p className="font-mono text-[11px] text-gray-400 sm:hidden break-all">{l.ref}</p>
+                          <p className="sm:hidden text-xs font-medium">
+                            {l.debit ? `+ ${formatKES(l.debit)}` : `- ${formatKES(l.credit)}`}
+                          </p>
                           {l.note && <p className="text-[11px] text-gray-400">{l.note}</p>}
                         </td>
-                        <td className="text-right">{l.debit ? formatKES(l.debit) : ""}</td>
-                        <td className="text-right">{l.credit ? formatKES(l.credit) : ""}</td>
+                        <td className="text-right hidden sm:table-cell">{l.debit ? formatKES(l.debit) : ""}</td>
+                        <td className="text-right hidden sm:table-cell">{l.credit ? formatKES(l.credit) : ""}</td>
                         <td className="text-right font-medium">{formatKES(running)}</td>
                       </tr>
                     );

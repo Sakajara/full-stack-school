@@ -51,7 +51,7 @@ const SchemeEditor = ({ scheme, payers, onDone }: { scheme: FundingScheme; payer
   };
 
   return (
-    <div className="bg-white p-4 rounded-md flex flex-col gap-3">
+    <div className="bg-surface p-4 rounded-md flex flex-col gap-3">
       <div className="flex flex-wrap gap-3 items-end">
         <label className="flex flex-col gap-1 flex-1 min-w-[220px]">
           <span className="text-xs text-gray-500">Name</span>
@@ -161,7 +161,7 @@ const PayersEditor = ({ payers }: { payers: Payer[] }) => {
     }
   };
   return (
-    <div className="bg-white p-4 rounded-md flex flex-col gap-3">
+    <div className="bg-surface p-4 rounded-md flex flex-col gap-3">
       <h2 className="text-lg font-semibold">Payers</h2>
       <p className="text-xs text-gray-400">
         Rename a payer when its name changes (for example if the Tertiary Education Funding Authority replaces HELB);
@@ -213,7 +213,7 @@ const SchemesPage = () => {
 
   return (
     <div className="p-4 pt-0 flex flex-col gap-4">
-      <div className="bg-white p-4 rounded-md flex flex-col gap-2">
+      <div className="bg-surface p-4 rounded-md flex flex-col gap-2">
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <h1 className="text-lg font-semibold">Funding schemes</h1>
           <button className="bg-lamaYellow py-1 px-3 rounded-md text-sm" onClick={() => setAdding((a) => !a)}>
