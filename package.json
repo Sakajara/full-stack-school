@@ -12,7 +12,8 @@
     "test:rules": "firebase emulators:exec --only firestore --project demo-chuo \"vitest run tests/rules\"",
     "deploy": "next build && firebase deploy --only hosting,firestore --project prod",
     "test:flow": "firebase emulators:exec --only auth,firestore --project demo-chuo \"vitest run tests/integration\"",
-    "seed:structure": "tsx --env-file=.env.local scripts/seed-structure.ts"
+    "seed:structure": "tsx --env-file=.env.local scripts/seed-structure.ts",
+    "setup:prod": "tsx --env-file=.env.local scripts/bootstrap.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

@@ -37,15 +37,19 @@ const usePayerTotals = (payers: Payer[]) => {
     let cancelled = false;
     Promise.all(
       payers.map(async (p) => {
-        const r = await getAggregateFromServer(query(col("accounts")), {
-          expected: sum(`byPayer.${p.key}.expected`),
-          received: sum(`byPayer.${p.key}.received`),
-        });
-        return { key: p.key, name: p.name, expected: r.data().expected ?? 0, received: r.data().received ?? 0 };
+        // One sum per query: Firestore needs a composite index for several
+        // sums in one query, and payers can be added at any time.
+        const total = async (field: string) =>
+          (await getAggregateFromServer(query(col("accounts")), { v: sum(field) })).data().v ?? 0;
+        const [expected, received] = await Promise.all([
+          total(`byPayer.${p.key}.expected`),
+          total(`byPayer.${p.key}.received`),
+        ]);
+        return { key: p.key, name: p.name, expected, received };
       })
     )
       .then((r) => !cancelled && setRows(r.filter((x) => x.expected || x.received)))
-      .catch(() => undefined);
+      .catch((e) => console.warn("Payer totals:", e));
     return () => {
       cancelled = true;
     };
